@@ -35,7 +35,7 @@ jobs:
         
       # changes the base-tag in index.html from '/' to 'BlazorGitHubPagesDemo' to match GitHub Pages repository subdirectory
       - name: Change base-tag in index.html from / to wordlersapp
-        run: sed -i 's/<base href="\/" \/>/<base href="\/wordlersapp\/" \/>/g' release/wwwroot/index.html
+        run: sed -i 's/<base href="\/" \/>/<base href="\/wordlersapp\/" \/>/g'  bin/Release/net6.0/publish/wwwroot/index.html
 
       - name: Github Pages
         if: ${{ github.ref == 'refs/heads/main' }}
