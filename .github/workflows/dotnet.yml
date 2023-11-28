@@ -32,6 +32,11 @@ jobs:
       - name: Publish .NET Core Project
         run: dotnet publish WordlersWeb.csproj --configuration Release
 
+        
+      # changes the base-tag in index.html from '/' to 'BlazorGitHubPagesDemo' to match GitHub Pages repository subdirectory
+      - name: Change base-tag in index.html from / to wordlersapp
+        run: sed -i 's/<base href="\/" \/>/<base href="\/wordlersapp\/" \/>/g' release/wwwroot/index.html
+
       - name: Github Pages
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: peaceiris/actions-gh-pages@v3.6.1
