@@ -1,0 +1,22 @@
+﻿@page "/room/create"
+@layout MainLayout
+
+
+<PageTitle>Create Game Room</PageTitle>
+
+<MudStack Spacing="10" Class="my-16 pt-16">
+    <MudStack>
+        <h3 class="align-self-center">Please copy the game room code generated</h3>
+    </MudStack>
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="5">
+            <MudTextField @bind-Value="TextValue" Label="Number of Game Rounds" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Create Room</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+
+@code {
+    public string TextValue { get; set; }
+}

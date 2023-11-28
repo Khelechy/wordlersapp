@@ -1,0 +1,38 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+
+<MudThemeProvider @bind-IsDarkMode="@_isDarkTheme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout >
+    @{
+        if (ShowAppBar())
+        {
+            <AppLayout/>
+        }
+    }
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+
+    bool _isDarkTheme = true;
+
+    bool ShowAppBar()
+    {
+        var page = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length - 1);
+        return page.Contains("login") || page.Contains("register") ? false : true;
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

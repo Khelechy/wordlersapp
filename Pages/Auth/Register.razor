@@ -1,0 +1,24 @@
+﻿@page "/register"
+@layout MainLayout
+
+<MudStack Class="align-self-center" Spacing="10">
+    <MudStack>
+        <h1 class="align-self-center">Getting Started!</h1>
+        <h5 class="align-self-center">Signup to access</h5>
+    </MudStack>
+    <MudPaper Class="pa-5 ma-5">
+        <MudStack Spacing="5">
+            <MudTextField @bind-Value="TextValue" Label="Firstname" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="TextValue" Label="Lastname" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="TextValue" Label="Email" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="TextValue" Label="Username" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="TextValue" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="TextValue" Label="Confirm Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Signup</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+@code {
+    public string TextValue { get; set; }
+}

@@ -1,0 +1,18 @@
+﻿@page "/room/join"
+@layout MainLayout
+
+<PageTitle>Join Game Room</PageTitle>
+
+<MudStack Spacing="10" Class="my-16 pt-16">
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="5">
+            <MudTextField @bind-Value="TextValue" Label="Room Code" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Join Room</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+
+@code {
+    public string TextValue { get; set; }
+}

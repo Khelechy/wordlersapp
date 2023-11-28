@@ -1,0 +1,20 @@
+﻿@page "/login"
+@layout MainLayout
+
+<MudStack Class="align-self-center" Spacing="10">
+    <MudStack>
+        <h1 class="align-self-center">Welcome Back!</h1>
+        <h5 class="align-self-center">Sign in to continue</h5>
+    </MudStack>
+    <MudPaper Class="pa-5 ma-5">
+        <MudStack Spacing="5">
+            <MudTextField @bind-Value="TextValue" Label="Username or Email" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="TextValue" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin=" Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Login</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+@code {
+    public string TextValue { get; set; }
+}
