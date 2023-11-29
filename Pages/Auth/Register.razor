@@ -1,5 +1,7 @@
 ﻿@page "/register"
+@using WordlersWeb.Helpers;
 @layout MainLayout
+@inject NavigationManager NavigationManager
 
 <MudStack Class="align-self-center" Spacing="10">
     <MudStack>
@@ -7,18 +9,75 @@
         <h5 class="align-self-center">Signup to access</h5>
     </MudStack>
     <MudPaper Class="pa-5 ma-5">
+        @if (hasError)
+        {
+            <MudAlert Severity="Severity.Error">@Error</MudAlert>
+        }
+
         <MudStack Spacing="5">
-            <MudTextField @bind-Value="TextValue" Label="Firstname" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudTextField @bind-Value="TextValue" Label="Lastname" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudTextField @bind-Value="TextValue" Label="Email" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudTextField @bind-Value="TextValue" Label="Username" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudTextField @bind-Value="TextValue" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudTextField @bind-Value="TextValue" Label="Confirm Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Signup</MudButton>
+            <MudTextField @bind-Value="Firstname" Label="Firstname" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="Lastname" Label="Lastname" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="Email" Label="Email" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="UserName" Label="Username" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="ConfirmPassword" Label="Confirm Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" OnClick="ProcessRegister" Color="Color.Primary" DisableElevation="true">
+                @if (_processing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Signup</MudText>
+                }
+            </MudButton>
         </MudStack>
     </MudPaper>
 </MudStack>
 
 @code {
-    public string TextValue { get; set; }
+    public string Firstname { get; set; }
+    public string Lastname { get; set; }
+    public string UserName { get; set; }
+    public string Email { get; set; }
+    public string Password { get; set; }
+    public string ConfirmPassword { get; set; }
+
+    public string Error { get; set; }
+
+    private bool _processing = false;
+    private bool hasError = false;
+
+    async Task ProcessRegister()
+    {
+        _processing = true;
+
+        var requestObject = new
+        {
+            FirstName = Firstname,
+            LastName = Lastname,
+            UserName = UserName,
+            Email = Email,
+            Password = Password,
+            ConfirmPassword = ConfirmPassword
+        };
+
+        string url = $"{AppConfig.BaseUrl}/api/auth/register";
+
+        var resp = await HttpUtility.MakePost(url, requestObject, null);
+        if (resp.IsSuccessStatusCode)
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+            NavigationManager.NavigateTo($"/login");
+        }
+        else
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+            Error = data.message.Value;
+            hasError = true;
+        }
+
+        _processing = false;
+    }
 }

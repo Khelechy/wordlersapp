@@ -1,20 +1,83 @@
 ﻿@page "/login"
+@using System.Diagnostics;
+@using WordlersWeb.Helpers;
 @layout MainLayout
+@inject NavigationManager NavigationManager
+@inject IJSRuntime Js
 
 <MudStack Class="align-self-center" Spacing="10">
     <MudStack>
         <h1 class="align-self-center">Welcome Back!</h1>
         <h5 class="align-self-center">Sign in to continue</h5>
     </MudStack>
+    @if (hasError)
+    {
+        <MudAlert Severity="Severity.Error">@Error</MudAlert>
+    }
+
     <MudPaper Class="pa-5 ma-5">
+        
         <MudStack Spacing="5">
-            <MudTextField @bind-Value="TextValue" Label="Username or Email" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
-            <MudTextField @bind-Value="TextValue" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin=" Margin.Dense"></MudTextField>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Login</MudButton>
+            <MudTextField @bind-Value="UserName" Label="Username or Email" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin="Margin.Dense"></MudTextField>
+            <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" Margin=" Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" OnClick="ProcessLogin" Color="Color.Primary" DisableElevation="true">
+                @if (_processing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Login</MudText>
+                }
+            </MudButton>
         </MudStack>
+        <MudSpacer/>
+        <MudLink Href="/register" Typo="Typo.body2">Signup</MudLink>
     </MudPaper>
 </MudStack>
 
 @code {
-    public string TextValue { get; set; }
+    public string UserName { get; set; }
+    public string Password { get; set; }
+
+    public string Error { get; set; }
+
+    private bool _processing = false;
+    private bool hasError = false;
+
+    async Task ProcessLogin()
+    {
+        _processing = true;
+
+        var requestObject = new
+        {
+            Email = UserName,
+            Password = Password
+        };
+
+        string url = $"{AppConfig.BaseUrl}/api/auth/login";
+
+        var resp = await HttpUtility.MakePost(url, requestObject, null);
+        if (resp.IsSuccessStatusCode)
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+            string token = data.data.token.Value;
+            string userId = data.data.user.id.Value;
+            string username = data.data.user.userName.Value;
+
+            await Js.InvokeAsync<string>("sessionStorage.setItem", "token", token);
+            await Js.InvokeAsync<string>("sessionStorage.setItem", "userId", userId);
+            await Js.InvokeAsync<string>("sessionStorage.setItem", "userName", username);
+            NavigationManager.NavigateTo($"/");
+        }
+        else
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+            Error = data.message.Value;
+            hasError = true;
+        }
+
+        _processing = false;
+    }
 }

@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
-
+@inject IJSRuntime Js
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkTheme" />
 <MudDialogProvider />
@@ -29,6 +29,18 @@
     {
         var page = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length - 1);
         return page.Contains("login") || page.Contains("register") ? false : true;
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        var token = await Js.InvokeAsync<string>("sessionStorage.getItem", "token");
+        if (string.IsNullOrEmpty(token))
+        {
+            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}");
+        }
+
     }
 
     void DrawerToggle()
