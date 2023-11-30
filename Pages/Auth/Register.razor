@@ -69,7 +69,7 @@
         if (resp.IsSuccessStatusCode)
         {
             var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
-            NavigationManager.NavigateTo($"/login");
+            NavigationManager.NavigateTo($"login");
         }
         else
         {
