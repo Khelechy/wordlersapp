@@ -38,7 +38,7 @@
         var token = await Js.InvokeAsync<string>("sessionStorage.getItem", "token");
         if (string.IsNullOrEmpty(token))
         {
-            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}");
+            NavigationManager.NavigateTo($"login}");
         }
 
     }
