@@ -32,8 +32,10 @@
                 }
             </MudButton>
         </MudStack>
-        <MudSpacer/>
-        <MudLink Href="register" Typo="Typo.body2">Signup</MudLink>
+        <MudStack Spacing="1" Row="true" Class="justify-center mt-5">
+            <MudText>Dont have an account?</MudText>
+            <MudLink Href="register" Typo="Typo.body2">Signup</MudLink>
+        </MudStack>
     </MudPaper>
 </MudStack>
 
@@ -69,7 +71,7 @@
             await Js.InvokeAsync<string>("sessionStorage.setItem", "token", token);
             await Js.InvokeAsync<string>("sessionStorage.setItem", "userId", userId);
             await Js.InvokeAsync<string>("sessionStorage.setItem", "userName", username);
-            NavigationManager.NavigateTo($"/");
+            NavigationManager.NavigateTo($"home");
         }
         else
         {
