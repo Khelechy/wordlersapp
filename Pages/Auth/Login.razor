@@ -71,7 +71,7 @@
             await Js.InvokeAsync<string>("sessionStorage.setItem", "token", token);
             await Js.InvokeAsync<string>("sessionStorage.setItem", "userId", userId);
             await Js.InvokeAsync<string>("sessionStorage.setItem", "userName", username);
-            NavigationManager.NavigateTo($"home");
+            NavigationManager.NavigateTo($"/");
         }
         else
         {
