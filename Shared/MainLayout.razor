@@ -35,10 +35,15 @@
     {
         base.OnInitialized();
 
-        var token = await Js.InvokeAsync<string>("sessionStorage.getItem", "token");
-        if (string.IsNullOrEmpty(token))
+
+        var page = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length - 1);
+        if (!page.Contains("login") || !page.Contains("register"))
         {
-            NavigationManager.NavigateTo($"login");
+            var token = await Js.InvokeAsync<string>("sessionStorage.getItem", "token");
+            if (string.IsNullOrEmpty(token))
+            {
+                NavigationManager.NavigateTo($"login");
+            }
         }
 
     }
