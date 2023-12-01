@@ -37,7 +37,8 @@
 
 
         var page = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length - 1);
-        if (!page.Contains("login") || !page.Contains("register"))
+        bool isAuthPage = page.Contains("login") || page.Contains("register") ? true : false;
+        if (!isAuthPage)
         {
             var token = await Js.InvokeAsync<string>("sessionStorage.getItem", "token");
             if (string.IsNullOrEmpty(token))
