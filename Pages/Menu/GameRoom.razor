@@ -6,60 +6,66 @@
 
 <MudStack Class="relative d-flex" Style="height: 100vh;">
 
-    <MudStack Class="d-flex flex-column justify-space-between" Height="100%">
+    <MudStack Class="justify-space-between mt-5" Height="100%">
 
         <MudButton Class="align-self-end z-100" Variant="Variant.Filled" Color="Color.Primary">Start Game</MudButton>
+        <MudButton Class="align-self-start" Variant="Variant.Filled" Color="Color.Primary" Disabled="true">
+            Messages:
+        </MudButton>
 
-        <MudList Clickable="false" Dense="false" DisableGutters="true">
-            <MudListItem Text="First" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-            <MudListItem Text="Single List Item" />
-        </MudList>
+        @if(messages.Count > 0)
+        {
+            <MudList>
+                @foreach (var message in messages)
+                {
+                    <MudListItem>
+                        <MudText>@message</MudText>
+                    </MudListItem>
+                    <MudDivider DividerType="DividerType.Middle" />
+                }
+            </MudList>
+        }
 
     </MudStack>
 
     <MudStack Class="fixed pa-3" Style="bottom: 0; left:0; width: 100%;" Row="true">
-        <MudTextField @bind-Value="TextValue" Label="" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        <MudIconButton Icon="@Icons.Material.Filled.Send" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" />
+        <MudTextField @ref="inputBoxReference" @bind-Value="InputMessage" Immediate="true" @onkeydown="@Enter" Label="" Variant="Variant.Outlined" Margin="Margin.Dense" AutoFocus="true"></MudTextField>
+        <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="SendMessage" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" />
     </MudStack>
 </MudStack>
 
 @code {
-    string TextValue;
+    string InputMessage;
 
     bool isGameOwner;
 
-    Color Color = Color.Success;
-    private void OnScroll(ScrollEventArgs e)
+    private MudTextField<string> inputBoxReference;
+
+    private List<string> messages = new List<string>();
+
+    protected async override Task OnInitializedAsync()
     {
-        Color = (e.FirstChildBoundingClientRect.Top * -1) switch
+        base.OnInitialized();
+        await Task.Delay(1000);
+        var mesg = $"WordlerBot: Welcome to wordlers game room";
+        messages.Add(mesg);
+    }
+
+
+    public void Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            var x when x < 500 => Color.Primary,
-            var x when x < 1500 => Color.Secondary,
-            var x when x < 2500 => Color.Tertiary,
-            _ => Color.Error
-        };
+            SendMessage();
+        }
+    }
+
+    async void SendMessage()
+    {
+        var mesg = $"Khelechy: {InputMessage}";
+        messages.Add(mesg);
+        InputMessage = string.Empty;
+        inputBoxReference.FocusAsync();
     }
 
 }
