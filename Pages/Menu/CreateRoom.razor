@@ -1,22 +1,99 @@
 ﻿@page "/room/create"
+@using WordlersWeb.Helpers;
 @layout MainLayout
+@inject IJSRuntime Js
 
 
 <PageTitle>Create Game Room</PageTitle>
 
 <MudStack Spacing="10" Class="my-16 pt-16">
+    @if (hasError)
+    {
+        <MudAlert Severity="Severity.Error">@Error</MudAlert>
+    }
     <MudStack>
         <h3 class="align-self-center">Please copy the game room code generated</h3>
     </MudStack>
     <MudPaper Class="pa-4">
         <MudStack Spacing="5">
-            <MudTextField @bind-Value="TextValue" Label="Number of Game Rounds" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Create Room</MudButton>
+            <MudTextField @bind-Value="NoOfRounds" Label="Number of Game Rounds" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateGameRoom" DisableElevation="true">
+                @if (_processing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Create Room</MudText>
+                }
+            </MudButton>
         </MudStack>
     </MudPaper>
+    @if (!string.IsNullOrEmpty(RoomCode))
+    {
+        <MudText Align="Align.Center" Typo="Typo.h5">Room code is: @RoomCode</MudText>
+    }
 </MudStack>
 
 
 @code {
-    public string TextValue { get; set; }
+
+
+    public int NoOfRounds { get; set; }
+    public string Error { get; set; }
+    public string OwnerId { get; set; }
+
+    public string RoomCode { get; set; }
+
+    private bool _processing = false;
+    private bool hasError = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        var ownerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
+
+        if (string.IsNullOrEmpty(ownerId))
+        {
+            Error = "Could not fetch user id";
+            hasError = true;
+        }
+
+        OwnerId = ownerId;
+
+    }
+
+    async Task CreateGameRoom()
+    {
+        _processing = true;
+
+        var requestObject = new
+        {
+            OwnerId = OwnerId,
+            NumberOfRounds = NoOfRounds
+        };
+
+        string url = $"{AppConfig.BaseUrl}/api/rooms/custom";
+
+        var resp = await HttpUtility.MakePost(url, requestObject, null);
+        if (resp.IsSuccessStatusCode)
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+            string roomCode = data.data.roomCode.Value;
+            if (!string.IsNullOrEmpty(roomCode))
+            {
+                RoomCode = roomCode;
+            }
+        }
+        else
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+            Error = data.message.Value;
+            hasError = true;
+        }
+
+        _processing = false;
+    }
 }

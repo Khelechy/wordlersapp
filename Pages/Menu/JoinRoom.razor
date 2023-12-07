@@ -1,18 +1,76 @@
 ﻿@page "/room/join"
+@using WordlersWeb.Helpers;
 @layout MainLayout
+@inject NavigationManager NavigationManager
+@inject IJSRuntime Js
 
 <PageTitle>Join Game Room</PageTitle>
 
 <MudStack Spacing="10" Class="my-16 pt-16">
+    @if (hasError)
+    {
+        <MudAlert Severity="Severity.Error">@Error</MudAlert>
+    }
     <MudPaper Class="pa-4">
         <MudStack Spacing="5">
-            <MudTextField @bind-Value="TextValue" Label="Room Code" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">Join Room</MudButton>
+            <MudTextField @bind-Value="RoomCode" Label="Room Code" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+            <MudButton Variant="Variant.Filled" OnClick="JoinGameRoom" Color="Color.Primary" DisableElevation="true">
+                @if (_processing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Join Room</MudText>
+                }
+            </MudButton>
         </MudStack>
     </MudPaper>
 </MudStack>
 
 
 @code {
-    public string TextValue { get; set; }
+    public string RoomCode { get; set; }
+    public string Error { get; set; }
+
+    private bool _processing = false;
+    private bool hasError = false;
+
+
+    async Task JoinGameRoom()
+    {
+        _processing = true;
+
+        if (!string.IsNullOrEmpty(RoomCode))
+        {
+            string url = $"{AppConfig.BaseUrl}/api/rooms/custom/{RoomCode}";
+
+            var resp = await HttpUtility.MakeGet(url, null, null);
+            if (resp.IsSuccessStatusCode)
+            {
+                var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+
+                string roomId = data.data.id.Value;
+                string gameId = data.data.gameId.Value;
+                string gameOwnerId = data.data.ownerUserId.Value;
+
+                await Js.InvokeAsync<string>("sessionStorage.setItem", "roomId", roomId);
+                await Js.InvokeAsync<string>("sessionStorage.setItem", "gameId", gameId);
+                await Js.InvokeAsync<string>("sessionStorage.setItem", "gameOwnerId", gameOwnerId);
+
+                NavigationManager.NavigateTo($"room/game");
+                
+            }
+            else
+            {
+                var data = JsonConvert.DeserializeObject<dynamic>(resp.Content);
+                Error = data.message.Value;
+                hasError = true;
+            }
+        }
+
+        _processing = false;
+        
+    }
 }

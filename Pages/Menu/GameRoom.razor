@@ -1,5 +1,7 @@
 ﻿@page "/room/game"
+@using Microsoft.AspNetCore.SignalR.Client;
 @layout MainLayout
+@inject IJSRuntime Js
 
 
 <PageTitle>Create Game Room</PageTitle>
@@ -8,7 +10,7 @@
 
     <MudStack Class="justify-space-between mt-5" Height="100%">
 
-        <MudButton Class="align-self-end z-100" Variant="Variant.Filled" Color="Color.Primary">Start Game</MudButton>
+        <MudButton Class="align-self-end z-100" Variant="Variant.Filled" Disabled="!isGameOwner" Color="Color.Primary">Start Game</MudButton>
         <MudButton Class="align-self-start" Variant="Variant.Filled" Color="Color.Primary" Disabled="true">
             Messages:
         </MudButton>
@@ -35,6 +37,7 @@
 </MudStack>
 
 @code {
+
     string InputMessage;
 
     bool isGameOwner;
@@ -43,10 +46,41 @@
 
     private List<string> messages = new List<string>();
 
+    private HubConnection? _messageHubConnection;
+
+    string RoomId;
+    string UserId;
+    string UserName;
+    string GameId;
+    string OriginalWord;
+
     protected async override Task OnInitializedAsync()
     {
         base.OnInitialized();
-        await Task.Delay(1000);
+
+        var userId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
+        var gameOwnerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "gameOwnerId");
+        var roomId = await Js.InvokeAsync<string>("sessionStorage.getItem", "roomId");
+        var username = await Js.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var gameId = await Js.InvokeAsync<string>("sessionStorage.getItem", "gameId");
+
+
+        RoomId = roomId;
+        UserId = userId;
+        UserName = username;
+        GameId = gameId; 
+
+        if(userId == gameOwnerId)
+        {
+            isGameOwner = true;
+        }
+
+        await StartHubConnection();
+
+        MessageListener();
+
+        await AddToRoom();
+
         var mesg = $"WordlerBot: Welcome to wordlers game room";
         messages.Add(mesg);
     }
@@ -62,10 +96,51 @@
 
     async void SendMessage()
     {
-        var mesg = $"Khelechy: {InputMessage}";
-        messages.Add(mesg);
+        // var mesg = $"Khelechy: {InputMessage}";
+        // messages.Add(mesg);
+
+        var mesgObj = new
+        {
+            MessageBody = InputMessage,
+            RoomId = RoomId,
+            GameId = GameId,
+            OriginalWord = "word",
+            UserName = UserName,
+            UserId = UserId
+        };
+
+        _messageHubConnection?.InvokeAsync("SendRoomMessage", UserName, mesgObj);
         InputMessage = string.Empty;
         inputBoxReference.FocusAsync();
     }
 
+
+    private async Task StartHubConnection()
+    {
+
+
+        var hubDataUrl = ($"{AppConfig.BaseUrl}/gameHub");
+        _messageHubConnection = new HubConnectionBuilder()
+                        .WithUrl(hubDataUrl)
+                        .Build();
+
+
+        await _messageHubConnection.StartAsync();
+    }
+
+    void MessageListener()
+    {
+        _messageHubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        {
+            var newMessage = $"{user}: {message}";
+            messages.Add(newMessage);
+            StateHasChanged();
+        });
+    }
+
+    async Task AddToRoom()
+    {
+
+        await _messageHubConnection?.InvokeAsync("AddToRoom", RoomId, UserName, UserId);
+    }
 }
