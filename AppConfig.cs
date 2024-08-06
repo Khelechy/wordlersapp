@@ -2,6 +2,6 @@
 {
     public static class AppConfig
     {
-        public static string BaseUrl = "https://wordlers-api-ff2c0d1eb789.herokuapp.com";
+        public static string BaseUrl = "https://wordlersapi-production.up.railway.app";
     }
 }
