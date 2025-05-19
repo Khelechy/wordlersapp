@@ -72,7 +72,8 @@
         var requestObject = new
         {
             OwnerId = OwnerId,
-            NumberOfRounds = NoOfRounds
+            NumberOfRounds = NoOfRounds,
+            GameType = 1
         };
 
         string url = $"{AppConfig.BaseUrl}/api/rooms/custom";

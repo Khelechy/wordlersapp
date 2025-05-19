@@ -61,7 +61,7 @@
         base.OnInitialized();
 
         var userId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
-        var gameOwnerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "gameOwnerId");
+        var gameOwnerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "ownerUserId");
         var roomId = await Js.InvokeAsync<string>("sessionStorage.getItem", "roomId");
         var username = await Js.InvokeAsync<string>("sessionStorage.getItem", "userName");
         var gameId = await Js.InvokeAsync<string>("sessionStorage.getItem", "gameId");
@@ -121,7 +121,7 @@
     {
 
 
-        var hubDataUrl = ($"{AppConfig.BaseUrl}/gameHub");
+        var hubDataUrl = ($"{AppConfig.BaseUrl}/roomhub");
         _messageHubConnection = new HubConnectionBuilder()
                         .WithUrl(hubDataUrl)
                         .WithAutomaticReconnect()
