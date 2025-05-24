@@ -1,5 +1,6 @@
 ﻿@page "/room/game"
 @using Microsoft.AspNetCore.SignalR.Client;
+@using WordlersWeb.Helpers
 @layout MainLayout
 @inject IJSRuntime Js
 
@@ -9,7 +10,7 @@
 <MudStack Class="relative d-flex" Style="height: 90vh">
 
     <MudStack Class="d-flex fixed z-20 pt-5 pb-2" Style="width: 94%; background-color:#32333D">
-        <MudButton Class="align-self-end" Variant="Variant.Filled" Disabled="!isGameOwner" Color="Color.Primary">Start Game</MudButton>
+        <MudButton Class="align-self-end" Variant="Variant.Filled" OnClick="ProcessStartGame" Disabled="!isGameOwner" Color="Color.Primary">Start Game</MudButton>
         <MudButton Class="align-self-start" Variant="Variant.Filled" Color="Color.Primary" Disabled="true">
             Messages:
         </MudButton>
@@ -55,6 +56,7 @@
     string UserName;
     string GameId;
     string OriginalWord;
+    bool IsInRound;
 
     protected async override Task OnInitializedAsync()
     {
@@ -106,14 +108,24 @@
             MessageBody = InputMessage,
             RoomId = RoomId,
             GameId = GameId,
-            OriginalWord = "word",
+            OriginalWord = OriginalWord,
             UserName = UserName,
-            UserId = UserId
+            UserId = UserId,
+            GameType = 1,
         };
 
-        _messageHubConnection?.InvokeAsync("SendRoomMessage", UserName, mesgObj);
         InputMessage = string.Empty;
         inputBoxReference.FocusAsync();
+
+        if (!IsInRound)
+        {
+            _messageHubConnection?.InvokeAsync("SendRoomMessage", UserName, mesgObj);
+        }
+        else
+        {
+            _messageHubConnection?.InvokeAsync("SendUserGameInputMessage", UserName, mesgObj);
+        }
+
     }
 
 
@@ -139,11 +151,37 @@
             messages.Add(newMessage);
             StateHasChanged();
         });
+
+        _messageHubConnection.On<bool>("ReceiveGameRoomRoundStatus", (status) =>
+       {
+           IsInRound = status;
+       });
+
+        _messageHubConnection.On<string>("ReceiveGameRoomRoundWord", (scrambledWord) =>
+        {
+            OriginalWord = scrambledWord;
+        });
     }
 
     async Task AddToRoom()
     {
 
         await _messageHubConnection?.InvokeAsync("AddToRoom", RoomId, UserName, UserId);
+    }
+
+    async Task ProcessStartGame()
+    {
+        isGameOwner = false;
+
+        var requestObject = new
+        {
+            GameId = GameId,
+            RoomId = RoomId
+        };
+
+        string url = $"{AppConfig.BaseUrl}/api/games/start";
+
+        var resp = HttpUtility.MakePost(url, requestObject, null);
+       
     }
 }
