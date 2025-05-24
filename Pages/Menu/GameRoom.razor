@@ -5,22 +5,24 @@
 @inject IJSRuntime Js
 
 
-<PageTitle>Create Game Room</PageTitle>
+<PageTitle>Game Room</PageTitle>
 
-<MudStack Class="relative d-flex" Style="height: 90vh">
+<MudStack Style="height: 100vh; position: relative;">
 
-    <MudStack Class="d-flex fixed z-20 pt-5 pb-2" Style="width: 94%; background-color:#32333D">
-        <MudButton Class="align-self-end" Variant="Variant.Filled" OnClick="ProcessStartGame" Disabled="!isGameOwner" Color="Color.Primary">Start Game</MudButton>
-        <MudButton Class="align-self-start" Variant="Variant.Filled" Color="Color.Primary" Disabled="true">
+    <!-- Fixed Header -->
+    <MudStack Class="d-flex fixed z-20 pt-5" Style="width: 100%; background-color:#32333D">
+        <MudButton Class="align-self-start" Variant="Variant.Filled" OnClick="ProcessStartGame" Disabled="!isGameOwner" Color="Color.Primary">Start Game</MudButton>
+        <MudText Class="align-self-start" Variant="Variant.Filled" Color="Color.Primary">
             Messages:
-        </MudButton>
+        </MudText>
     </MudStack>
 
-    <MudStack Class="mt-15 z-10 overflow-scroll" Style="height: 80vh;">
 
+    <!-- Messages Content Area -->
+    <MudContainer id="messages-container" Style="margin-top: 100px; margin-bottom: 115px; height: calc(100vh - 160px); overflow-y: auto;">
         @if (messages.Count > 0)
         {
-            <MudList Class="mt-15">
+            <MudList>
                 @foreach (var message in messages)
                 {
                     <MudListItem>
@@ -30,13 +32,34 @@
                 }
             </MudList>
         }
+        else
+        {
+            <MudText Align="Align.Center" Class="mt-8" Color="Color.Tertiary">
+                No messages yet...
+            </MudText>
+        }
+    </MudContainer>
 
-    </MudStack>
+    <!-- Fixed Input Area -->
+    <MudPaper Class="pa-3" Style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;">
+        <MudStack Row="true" Spacing="2">
+            <MudTextField @ref="inputBoxReference"
+                          @bind-Value="InputMessage"
+                          Immediate="true"
+                          @onkeydown="@Enter"
+                          Label="Type your message..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          AutoFocus="true"
+                          Style="flex: 1;" />
+            <MudIconButton Icon="@Icons.Material.Filled.Send"
+                           OnClick="SendMessage"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large" />
+        </MudStack>
+    </MudPaper>
 
-    <MudStack Class="fixed pa-3" Style="bottom: 0; left:0; width: 100%;" Row="true">
-        <MudTextField @ref="inputBoxReference" @bind-Value="InputMessage" Immediate="true" @onkeydown="@Enter" Label="" Variant="Variant.Outlined" Margin="Margin.Dense" AutoFocus="true"></MudTextField>
-        <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="SendMessage" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" />
-    </MudStack>
 </MudStack>
 
 @code {
@@ -87,6 +110,9 @@
 
         var mesg = $"WordlerBot: Welcome to wordlers game room";
         messages.Add(mesg);
+
+        // Scroll to bottom after initial message
+        await ScrollToBottom();
     }
 
 
@@ -94,7 +120,11 @@
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            SendMessage();
+            if (!string.IsNullOrEmpty(InputMessage))
+            {
+                SendMessage();
+            }
+            
         }
     }
 
@@ -150,6 +180,9 @@
             var newMessage = $"{user}: {message}";
             messages.Add(newMessage);
             StateHasChanged();
+
+            // Auto-scroll to bottom when new message arrives
+            _ = Task.Run(async () => await ScrollToBottom());
         });
 
         _messageHubConnection.On<bool>("ReceiveGameRoomRoundStatus", (status) =>
@@ -183,5 +216,19 @@
 
         var resp = HttpUtility.MakePost(url, requestObject, null);
        
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await Task.Delay(50); // Small delay to ensure DOM is updated
+            await Js.InvokeVoidAsync("scrollToBottom", "messages-container");
+        }
+        catch (Exception ex)
+        {
+            // Handle any JS interop errors silently
+            Console.WriteLine($"Scroll error: {ex.Message}");
+        }
     }
 }
