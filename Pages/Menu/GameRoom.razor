@@ -85,6 +85,8 @@
     {
         base.OnInitialized();
 
+        await EnsureScrollFunctionExists();
+
         var userId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
         var gameOwnerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "ownerUserId");
         var roomId = await Js.InvokeAsync<string>("sessionStorage.getItem", "roomId");
@@ -218,12 +220,45 @@
        
     }
 
+    private async Task EnsureScrollFunctionExists()
+    {
+        var script = @"
+            if (typeof window.scrollToBottom === 'undefined') {
+                window.scrollToBottom = (elementId) => {
+                    try {
+                        const element = document.getElementById(elementId);
+                        if (element) {
+                            element.scrollTo({
+                                top: element.scrollHeight,
+                                behavior: 'smooth'
+                            });
+
+                            if (element.scrollTop !== element.scrollHeight) {
+                                element.scrollTop = element.scrollHeight;
+                            }
+                        } else {
+                            console.log('Element with id ' + elementId + ' not found');
+                        }
+                    } catch (error) {
+                        console.error('Scroll error:', error);
+                    }
+                };
+            }
+        ";
+
+        await Js.InvokeVoidAsync("eval", script);
+    }
+
     private async Task ScrollToBottom()
     {
         try
         {
-            await Task.Delay(50); // Small delay to ensure DOM is updated
-            await Js.InvokeVoidAsync("scrollToBottom", "messages-container");
+            // Use InvokeAsync to ensure we're on the UI thread
+            await InvokeAsync(async () =>
+            {
+                await Task.Delay(100); // Increased delay to ensure DOM is updated
+                await Js.InvokeVoidAsync("scrollToBottom", "messages-container");
+            });
         }
         catch (Exception ex)
         {
