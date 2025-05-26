@@ -5,62 +5,164 @@
 @inject IJSRuntime Js
 
 
+
+
 <PageTitle>Game Room</PageTitle>
 
-<MudStack Style="height: 100vh; position: relative;">
+<style>
+    .chat-page-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+        background: var(--mud-palette-background);
+    }
 
-    <!-- Fixed Header -->
-    <MudStack Class="d-flex fixed z-20 pt-5" Style="width: 100%; background-color:#32333D">
-        <MudButton Class="align-self-start" Variant="Variant.Filled" OnClick="ProcessStartGame" Disabled="!isGameOwner" Color="Color.Primary">Start Game</MudButton>
-        <MudText Class="align-self-start" Variant="Variant.Filled" Color="Color.Primary">
-            Messages:
-        </MudText>
-    </MudStack>
+    .chat-container {
+        height: 100vh;
+        height: 100dvh;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
 
+    .game-header {
+        position: fixed;
+        top: 60px; /* Height of MudAppBar */
+        left: 0;
+        right: 0;
+        background-color: #32333D;
+        padding: 12px 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        z-index: 200;
+        height: 90px; /* Fixed height */
+    }
 
-    <!-- Messages Content Area -->
-    <MudContainer id="messages-container" Style="margin-top: 100px; margin-bottom: 115px; height: calc(100vh - 160px); overflow-y: auto;">
-        @if (messages.Count > 0)
-        {
-            <MudList>
-                @foreach (var message in messages)
-                {
-                    <MudListItem>
-                        <MudText>@message</MudText>
-                    </MudListItem>
-                    <MudDivider DividerType="DividerType.Middle" />
-                }
-            </MudList>
-        }
-        else
-        {
-            <MudText Align="Align.Center" Class="mt-8" Color="Color.Tertiary">
-                No messages yet...
-            </MudText>
-        }
-    </MudContainer>
+    .messages-area {
+        position: fixed;
+        top: 150px; /* AppBar (60px) + GameHeader (60px) */
+        left: 0;
+        right: 0;
+        bottom: 80px; /* Space for input area */
+        overflow-y: auto; /* ONLY this scrolls */
+        overflow-x: hidden;
+        padding: 16px;
+        -webkit-overflow-scrolling: touch;
+        background: transparent;
+    }
 
-    <!-- Fixed Input Area -->
-    <MudPaper Class="pa-3" Style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;">
-        <MudStack Row="true" Spacing="2">
-            <MudTextField @ref="inputBoxReference"
-                          @bind-Value="InputMessage"
-                          Immediate="true"
-                          @onkeydown="@Enter"
-                          Label="Type your message..."
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          AutoFocus="true"
-                          Style="flex: 1;" />
-            <MudIconButton Icon="@Icons.Material.Filled.Send"
-                           OnClick="SendMessage"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Size="Size.Large" />
-        </MudStack>
-    </MudPaper>
+    .fixed-input {
+        position: fixed;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: #32323c;
+        padding: 12px;
+        box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        height: 56px; /* Fixed height */
+    }
 
-</MudStack>
+    /* Prevent zoom on input focus for mobile - inline styles will handle this */
+    .mobile-input input {
+        font-size: 16px !important;
+    }
+
+    /* Ensure MudAppBar stays fixed - but don't override too aggressively */
+    .mud-appbar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1300 !important;
+        height: 64px !important;
+    }
+
+    /* Only override container styles for this specific page */
+    .chat-page-wrapper .mud-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        height: 100%;
+    }
+
+    .chat-page-wrapper .mud-main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        height: 100%;
+    }
+</style>
+
+<div class="chat-page-wrapper">
+    <div class="chat-container">
+        <!-- Fixed Header -->
+
+        <div class="game-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <MudButton Variant="Variant.Filled" OnClick="ProcessStartGame"
+                           Disabled="!isGameOwner" Color="Color.Primary" Size="Size.Small">
+                    Start Game
+                </MudButton>
+            </div>
+            @if (!string.IsNullOrEmpty(OriginalWord))
+            {
+                <MudText Align="Align.Center" Class="mt-4" Color="Color.Tertiary">
+                    *@OriginalWord*
+                </MudText>
+            }
+        </div>
+
+        <!-- Messages Content Area -->
+        <div id="messages-container" class="messages-area">
+            @if (messages.Count > 0)
+            {
+                <MudList>
+                    @foreach (var message in messages)
+                    {
+                        <MudListItem>
+                            <MudText>@message</MudText>
+                        </MudListItem>
+                        <MudDivider DividerType="DividerType.Middle" />
+                    }
+                </MudList>
+            }
+            else
+            {
+                <MudText Align="Align.Center" Class="mt-8" Color="Color.Tertiary">
+                    No messages yet...
+                </MudText>
+            }
+        </div>
+
+        <!-- Fixed Input Area -->
+        <div class="fixed-input">
+            <MudStack Row="true" Spacing="2">
+                <MudTextField @ref="inputBoxReference"
+                              @bind-Value="InputMessage"
+                              Immediate="true"
+                              @onkeydown="@Enter"
+                              @onfocus="HandleInputFocus"
+                              @onblur="HandleInputBlur"
+                              Label=""
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              AutoFocus="false"
+                              Class="mobile-input"
+                              Style="flex: 1; font-size: 16px;" />
+                <MudIconButton Icon="@Icons.Material.Filled.Send"
+                               OnClick="SendMessage"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large" />
+            </MudStack>
+        </div>
+    </div>
+</div>
+
 
 @code {
 
@@ -80,12 +182,15 @@
     string GameId;
     string OriginalWord;
     bool IsInRound;
+    private bool isKeyboardVisible = false;
+
 
     protected async override Task OnInitializedAsync()
     {
         base.OnInitialized();
 
         await EnsureScrollFunctionExists();
+       // await SetupMobileKeyboardHandling();
 
         var userId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
         var gameOwnerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "ownerUserId");
@@ -135,27 +240,30 @@
         // var mesg = $"Khelechy: {InputMessage}";
         // messages.Add(mesg);
 
-        var mesgObj = new
+        if (!string.IsNullOrEmpty(InputMessage))
         {
-            MessageBody = InputMessage,
-            RoomId = RoomId,
-            GameId = GameId,
-            OriginalWord = OriginalWord,
-            UserName = UserName,
-            UserId = UserId,
-            GameType = 1,
-        };
+            var mesgObj = new
+            {
+                MessageBody = InputMessage,
+                RoomId = RoomId,
+                GameId = GameId,
+                OriginalWord = OriginalWord,
+                UserName = UserName,
+                UserId = UserId,
+                GameType = 1,
+            };
 
-        InputMessage = string.Empty;
-        inputBoxReference.FocusAsync();
+            InputMessage = string.Empty;
+            inputBoxReference.FocusAsync();
 
-        if (!IsInRound)
-        {
-            _messageHubConnection?.InvokeAsync("SendRoomMessage", UserName, mesgObj);
-        }
-        else
-        {
-            _messageHubConnection?.InvokeAsync("SendUserGameInputMessage", UserName, mesgObj);
+            if (!IsInRound)
+            {
+                _messageHubConnection?.InvokeAsync("SendRoomMessage", UserName, mesgObj);
+            }
+            else
+            {
+                _messageHubConnection?.InvokeAsync("SendUserGameInputMessage", UserName, mesgObj);
+            }
         }
 
     }
@@ -181,10 +289,13 @@
         {
             var newMessage = $"{user}: {message}";
             messages.Add(newMessage);
-            StateHasChanged();
-
-            // Auto-scroll to bottom when new message arrives
-            _ = Task.Run(async () => await ScrollToBottom());
+            // Force UI update first, then scroll
+            InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                await Task.Delay(10); // Small delay to ensure DOM update
+                await ScrollToBottom();
+            });
         });
 
         _messageHubConnection.On<bool>("ReceiveGameRoomRoundStatus", (status) =>
@@ -249,20 +360,84 @@
         await Js.InvokeVoidAsync("eval", script);
     }
 
+    private async Task SetupMobileKeyboardHandling()
+    {
+        var script = @"
+            function preventPageScroll() {
+                // Prevent any page scrolling
+                document.body.style.overflow = 'hidden';
+                document.documentElement.style.overflow = 'hidden';
+
+                // Prevent touch scroll events on body
+                document.body.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+
+                // Allow scrolling only in messages container
+                var messagesContainer = document.getElementById('messages-container');
+                if (messagesContainer) {
+                    messagesContainer.addEventListener('touchmove', function(e) {
+                        e.stopPropagation();
+                    }, { passive: true });
+                }
+            }
+
+            // Apply immediately
+            preventPageScroll();
+
+            // Reapply after any DOM changes
+            setTimeout(preventPageScroll, 100);
+        ";
+
+        await Js.InvokeVoidAsync("eval", script);
+
+        // Add mobile input styles
+        var styleScript = @"
+            if (!document.getElementById('mobile-styles')) {
+                var style = document.createElement('style');
+                style.id = 'mobile-styles';
+                style.innerHTML = 'input, textarea { font-size: 16px !important; }';
+                document.head.appendChild(style);
+            }
+        ";
+
+        await Js.InvokeVoidAsync("eval", styleScript);
+    }
+
+    private async Task HandleInputFocus()
+    {
+        isKeyboardVisible = true;
+        // Small delay to let keyboard animate in
+        await Task.Delay(300);
+        await ScrollToBottom();
+    }
+
+    private async Task HandleInputBlur()
+    {
+        isKeyboardVisible = false;
+        // Small delay to let keyboard animate out
+        await Task.Delay(300);
+        StateHasChanged();
+    }
+
     private async Task ScrollToBottom()
     {
         try
         {
-            // Use InvokeAsync to ensure we're on the UI thread
+            // Ensure we're on the UI thread and DOM is ready
             await InvokeAsync(async () =>
             {
-                await Task.Delay(100); // Increased delay to ensure DOM is updated
+                // Wait for the next render cycle
+                await Task.Yield();
+
+                // Additional small delay to ensure DOM is fully updated
+                await Task.Delay(5);
+
                 await Js.InvokeVoidAsync("scrollToBottom", "messages-container");
             });
         }
         catch (Exception ex)
         {
-            // Handle any JS interop errors silently
             Console.WriteLine($"Scroll error: {ex.Message}");
         }
     }

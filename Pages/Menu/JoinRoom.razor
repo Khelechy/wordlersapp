@@ -43,6 +43,7 @@
         _processing = true;
 
         var ownerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
+        var username = await Js.InvokeAsync<string>("sessionStorage.getItem", "userName");
 
         if (!string.IsNullOrEmpty(RoomCode))
         {
@@ -51,7 +52,8 @@
             var requestObject = new
             {
                 Code = RoomCode,
-                UserId = ownerId
+                UserId = ownerId,
+                UserName = username
             };
 
             var resp = await HttpUtility.MakePost(url, requestObject, null);
