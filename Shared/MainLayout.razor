@@ -13,10 +13,19 @@
             <AppLayout/>
         }
     }
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False">
+    <MudMainContent Class="@GetMainContentClass()">
+        @if (IsGameRoom())
+        {
             @Body
-        </MudContainer>
+
+        }
+        else
+        {
+            <MudContainer MaxWidth="MaxWidth.False">
+                @Body
+            </MudContainer>
+        }
+     
     </MudMainContent>
 </MudLayout>
 
@@ -29,6 +38,17 @@
     {
         var page = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length - 1);
         return page.Contains("login") || page.Contains("register") ? false : true;
+    }
+
+    bool IsGameRoom()
+    {
+        var page = NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length - 1);
+        return page.Contains("room/game");
+    }
+
+    string GetMainContentClass()
+    {
+        return IsGameRoom() ? "game-room-main-content" : "";
     }
 
     protected async override Task OnInitializedAsync()

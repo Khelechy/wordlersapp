@@ -3,128 +3,170 @@
 @using WordlersWeb.Helpers
 @layout MainLayout
 @inject IJSRuntime Js
-
-
+@inject NavigationManager NavigationManager
 
 
 <PageTitle>Game Room</PageTitle>
 
 <style>
-    .chat-page-wrapper {
+    .game-room-main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+        position: relative !important;
+    }
+
+    .game-room-wrapper {
         position: fixed;
-        top: 0;
+        top: 64px; /* Height of MudAppBar */
         left: 0;
         right: 0;
         bottom: 0;
         overflow: hidden;
         background: var(--mud-palette-background);
-    }
-
-    .chat-container {
-        height: 100vh;
-        height: 100dvh;
-        position: relative;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+    }
+
+    @@media (min-width: 960px) {
+        .game-room-wrapper {
+            left: 240px; /* Width of MudDrawer on desktop */
+        }
     }
 
     .game-header {
-        position: fixed;
-        top: 60px; /* Height of MudAppBar */
-        left: 0;
-        right: 0;
+        position: relative;
         background-color: #32333D;
         padding: 12px 16px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         z-index: 200;
-        height: 90px; /* Fixed height */
+        flex-shrink: 0;
+        min-height: 90px;
     }
 
     .messages-area {
-        position: fixed;
-        top: 150px; /* AppBar (60px) + GameHeader (60px) */
-        left: 0;
-        right: 0;
-        bottom: 80px; /* Space for input area */
-        overflow-y: auto; /* ONLY this scrolls */
+        flex: 1;
+        overflow-y: auto;
         overflow-x: hidden;
         padding: 16px;
         -webkit-overflow-scrolling: touch;
         background: transparent;
+        display: flex;
+        flex-direction: column;
     }
 
     .fixed-input {
-        position: fixed;
-        bottom: 10px;
-        left: 0;
-        right: 0;
-        z-index: 1000;
+        position: relative;
         background: #32323c;
         padding: 12px;
         box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-        height: 56px; /* Fixed height */
+        flex-shrink: 0;
+        z-index: 1000;
     }
 
-    /* Prevent zoom on input focus for mobile - inline styles will handle this */
+    @@media (max-width: 959px) {
+        .game-room-wrapper {
+            left: 0; /* No drawer offset on mobile */
+        }
+        
+        .game-header {
+            padding: 8px 12px;
+            min-height: 70px;
+        }
+        
+        .messages-area {
+            padding: 12px;
+        }
+        
+        .fixed-input {
+            padding: 8px;
+        }
+    }
+
+    /* Handle very short screens (keyboard visible) */
+    @@media (max-height: 500px) {
+        .game-header {
+            min-height: 50px;
+            padding: 4px 12px;
+        }
+        
+        .messages-area {
+            padding: 8px 12px;
+        }
+        
+        .fixed-input {
+            padding: 6px 8px;
+        }
+    }
+
+    /* Prevent zoom on input focus */
     .mobile-input input {
         font-size: 16px !important;
     }
 
-    /* Ensure MudAppBar stays fixed - but don't override too aggressively */
+    /* Ensure smooth scrolling */
+    .messages-area {
+        scroll-behavior: smooth;
+    }
+
+    /* Auto-scroll messages to bottom */
+    .messages-list {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        justify-content: flex-end;
+    }
+
+    /* Mobile keyboard handling */
+    @@supports (height: 100dvh) {
+        .game-room-wrapper {
+            height: calc(100dvh - 64px);
+        }
+    }
+
+    /* Ensure MudAppBar and drawer work properly */
     .mud-appbar {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         right: 0 !important;
         z-index: 1300 !important;
-        height: 64px !important;
     }
 
-    /* Only override container styles for this specific page */
-    .chat-page-wrapper .mud-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: none !important;
-        height: 100%;
-    }
-
-    .chat-page-wrapper .mud-main-content {
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-        height: 100%;
+    .mud-drawer {
+        top: 64px !important;
     }
 </style>
 
-<div class="chat-page-wrapper">
-    <div class="chat-container">
-        <!-- Fixed Header -->
+<div class="game-room-wrapper">
+    <!-- Fixed Header -->
 
-        <div class="game-header">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <MudButton Variant="Variant.Filled" OnClick="ProcessStartGame"
-                           Disabled="!isGameOwner" Color="Color.Primary" Size="Size.Small">
-                    Start Game
-                </MudButton>
-            </div>
-            @if (!string.IsNullOrEmpty(OriginalWord))
-            {
-                <MudText Align="Align.Center" Class="mt-4" Color="Color.Tertiary">
-                    *@OriginalWord*
-                </MudText>
-            }
+    <div class="game-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <MudButton Variant="Variant.Filled" OnClick="ProcessStartGame"
+                       Disabled="!isGameOwner" Color="Color.Primary" Size="Size.Small">
+                Start Game
+            </MudButton>
         </div>
+        @if (!string.IsNullOrEmpty(OriginalWord))
+        {
+            <MudText Align="Align.Center" Class="mt-4" Color="Color.Tertiary">
+                *@OriginalWord*
+            </MudText>
+        }
+    </div>
 
-        <!-- Messages Content Area -->
-        <div id="messages-container" class="messages-area">
+    <!-- Messages Content Area -->
+    <div id="messages-container" class="messages-area">
+       <div class="messages-list">
             @if (messages.Count > 0)
             {
-                <MudList>
+                <MudList Dense="true">
                     @foreach (var message in messages)
                     {
-                        <MudListItem>
-                            <MudText>@message</MudText>
+                        <MudListItem Class="px-2 py-1">
+                            <MudText Typo="Typo.body2">@message</MudText>
                         </MudListItem>
                         <MudDivider DividerType="DividerType.Middle" />
                     }
@@ -132,34 +174,43 @@
             }
             else
             {
-                <MudText Align="Align.Center" Class="mt-8" Color="Color.Tertiary">
-                    No messages yet...
-                </MudText>
+               <div style="display: flex; align-items: center; height: 100%;">
+                    <MudText Align="Align.Center" Color="Color.Tertiary">
+                        No messages yet...
+                    </MudText>
+               </div>
             }
-        </div>
+       </div>
+    </div>
 
-        <!-- Fixed Input Area -->
-        <div class="fixed-input">
-            <MudStack Row="true" Spacing="2">
-                <MudTextField @ref="inputBoxReference"
-                              @bind-Value="InputMessage"
-                              Immediate="true"
-                              @onkeydown="@Enter"
-                              @onfocus="HandleInputFocus"
-                              @onblur="HandleInputBlur"
-                              Label=""
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              AutoFocus="false"
-                              Class="mobile-input"
-                              Style="flex: 1; font-size: 16px;" />
-                <MudIconButton Icon="@Icons.Material.Filled.Send"
-                               OnClick="SendMessage"
-                               Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               Size="Size.Large" />
-            </MudStack>
-        </div>
+    <!-- Fixed Input Area -->
+    <div class="fixed-input">
+        @if (!string.IsNullOrEmpty(OriginalWord))
+        {
+            <MudText Align="Align.Center" Class="mt-2" Color="Color.Tertiary">
+                *@OriginalWord*
+            </MudText>
+        }
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudTextField @ref="inputBoxReference"
+                          @bind-Value="InputMessage"
+                          Immediate="true"
+                          @onkeydown="@Enter"
+                          @onfocus="HandleInputFocus"
+                          @onblur="HandleInputBlur"
+                          Label=""
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          AutoFocus="false"
+                          Class="mobile-input"
+                          Style="flex: 1; font-size: 16px;" />
+            <MudIconButton Icon="@Icons.Material.Filled.Send"
+                           OnClick="SendMessage"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Medium" 
+                           Disabled="@string.IsNullOrWhiteSpace(InputMessage)" />
+        </MudStack>
     </div>
 </div>
 
@@ -189,8 +240,10 @@
     {
         base.OnInitialized();
 
+        await SetupMobileOptimizations();
+
         await EnsureScrollFunctionExists();
-       // await SetupMobileKeyboardHandling();
+        // await SetupMobileKeyboardHandling();
 
         var userId = await Js.InvokeAsync<string>("sessionStorage.getItem", "userId");
         var gameOwnerId = await Js.InvokeAsync<string>("sessionStorage.getItem", "ownerUserId");
@@ -231,7 +284,7 @@
             {
                 SendMessage();
             }
-            
+
         }
     }
 
@@ -301,6 +354,10 @@
         _messageHubConnection.On<bool>("ReceiveGameRoomRoundStatus", (status) =>
        {
            IsInRound = status;
+           if(status == false)
+           {
+               OriginalWord = string.Empty;
+           }
        });
 
         _messageHubConnection.On<string>("ReceiveGameRoomRoundWord", (scrambledWord) =>
@@ -328,7 +385,43 @@
         string url = $"{AppConfig.BaseUrl}/api/games/start";
 
         var resp = HttpUtility.MakePost(url, requestObject, null);
-       
+
+    }
+
+    private async Task SetupMobileOptimizations()
+    {
+        var script = @"
+             function setupMobileOptimizations() {
+                // Handle viewport changes for mobile keyboard
+                function setViewportHeight() {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', vh + 'px');
+                }
+
+                setViewportHeight();
+                window.addEventListener('resize', setViewportHeight);
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(setViewportHeight, 100);
+                });
+
+                // Prevent unwanted scrolling but allow in messages container
+                document.body.addEventListener('touchmove', function(e) {
+                    const messagesContainer = document.getElementById('messages-container');
+                    if (messagesContainer && !messagesContainer.contains(e.target)) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+
+                // Prevent bounce scrolling on iOS
+                document.addEventListener('touchmove', function(e) {
+                    if (e.scale !== 1) { e.preventDefault(); }
+                }, { passive: false });
+            }
+
+            setupMobileOptimizations();
+        ";
+        
+        await Js.InvokeVoidAsync("eval", script);
     }
 
     private async Task EnsureScrollFunctionExists()
