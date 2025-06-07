@@ -47,8 +47,7 @@
 
     .messages-area {
         flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow: hidden;
         padding: 16px;
         -webkit-overflow-scrolling: touch;
         background: transparent;
@@ -116,6 +115,10 @@
         flex-direction: column;
         min-height: 100%;
         justify-content: flex-end;
+        overflow-y: auto; /* This container scrolls */
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
     }
 
     /* Mobile keyboard handling */
@@ -424,21 +427,55 @@
         await Js.InvokeVoidAsync("eval", script);
     }
 
+    // private async Task EnsureScrollFunctionExists()
+    // {
+    //     var script = @"
+    //         if (typeof window.scrollToBottom === 'undefined') {
+    //             window.scrollToBottom = (elementId) => {
+    //                 try {
+    //                     const element = document.getElementById(elementId);
+    //                     if (element) {
+    //                         element.scrollTo({
+    //                             top: element.scrollHeight,
+    //                             behavior: 'smooth'
+    //                         });
+
+    //                         if (element.scrollTop !== element.scrollHeight) {
+    //                             element.scrollTop = element.scrollHeight;
+    //                         }
+    //                     } else {
+    //                         console.log('Element with id ' + elementId + ' not found');
+    //                     }
+    //                 } catch (error) {
+    //                     console.error('Scroll error:', error);
+    //                 }
+    //             };
+    //         }
+    //     ";
+
+    //     await Js.InvokeVoidAsync("eval", script);
+    // }
+
     private async Task EnsureScrollFunctionExists()
     {
         var script = @"
             if (typeof window.scrollToBottom === 'undefined') {
                 window.scrollToBottom = (elementId) => {
                     try {
-                        const element = document.getElementById(elementId);
-                        if (element) {
-                            element.scrollTo({
-                                top: element.scrollHeight,
-                                behavior: 'smooth'
-                            });
+                        // Find the messages-list element inside the container
+                        const container = document.getElementById(elementId);
+                        if (container) {
+                            const messagesList = container.querySelector('.messages-list');
+                            if (messagesList) {
+                                messagesList.scrollTo({
+                                    top: messagesList.scrollHeight,
+                                    behavior: 'smooth'
+                                });
 
-                            if (element.scrollTop !== element.scrollHeight) {
-                                element.scrollTop = element.scrollHeight;
+                                // Fallback for browsers that don't support smooth scrolling
+                                if (messagesList.scrollTop !== messagesList.scrollHeight) {
+                                    messagesList.scrollTop = messagesList.scrollHeight;
+                                }
                             }
                         } else {
                             console.log('Element with id ' + elementId + ' not found');
